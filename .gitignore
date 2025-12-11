@@ -1,0 +1,53 @@
+# --- Python Internals ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environment ---
+# Based on the 'venv' folder in your image
+venv/
+env/
+.venv/
+.env
+
+# --- Data Management ---
+# Crucial for Healthcare/FL projects: Never commit datasets
+data/*
+!data/.gitkeep
+
+# --- Configuration & Secrets ---
+# If your config.yaml contains sensitive keys/paths, uncomment the line below
+# conf/config.yaml
+
+# --- IDE Settings ---
+# VS Code settings (often local-specific)
+.vscode/
+
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.env
+.venv/
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# IDE settings (VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
