@@ -49,10 +49,18 @@ class ModularFlowerClient(fl.client.NumPyClient):
         # Return: Payload, Dataset Size, Metrics
         return final_payload, len(self.train_loader.dataset), metrics
 
+    # def evaluate(self, parameters, config):
+    #     self._set_parameters(parameters)
+    #     loss, accuracy = self.trainer.evaluate(self.model, self.test_loader, self.device)
+    #     return float(loss), len(self.test_loader.dataset), {"accuracy": float(accuracy)}
+
     def evaluate(self, parameters, config):
-        self._set_parameters(parameters)
+        decompressed_params = self.compression.decompress(parameters)
+        self._set_parameters(decompressed_params)
         loss, accuracy = self.trainer.evaluate(self.model, self.test_loader, self.device)
         return float(loss), len(self.test_loader.dataset), {"accuracy": float(accuracy)}
+
+
 
     def _set_parameters(self, parameters):
         params_dict = zip(self.model.state_dict().keys(), parameters)

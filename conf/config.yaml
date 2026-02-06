@@ -1,0 +1,40 @@
+# conf/config.yaml
+model:
+  type: kan # options: kan, mlp
+  params:
+    # for kan (example)
+    layers_hidden: [784, 24, 24, 10]
+    grid_min: -2.0
+    grid_max: 2.0
+    num_grids: 8
+    use_base_update: true
+
+data:
+  type: mnist # options: mnist (later: ecg, ehr, mri)
+  params:
+    batch_size: 32
+    shuffle: true
+    data_root: "./data"
+
+trainer:
+  type: standard
+  params:
+    optimizer: sgd
+    lr: 0.01
+    momentum: 0.9
+
+privacy:
+  type: gaussian # options: gaussian, none
+  params:
+    noise_multiplier: 0.5
+    clipping_norm: 1.0
+
+compression:
+  type: none # options: none (later: quantize, sparsify)
+  params: {}
+
+runtime:
+  device: cpu # options: cpu, cuda
+  server_address: "127.0.0.1:8080"
+  client_name: "hospital_client_01"
+  log_level: "info"
