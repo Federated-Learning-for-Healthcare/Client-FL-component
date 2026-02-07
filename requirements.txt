@@ -12,3 +12,6 @@ omegaconf>=2.3.0      # dependency for Hydra
 
 # 4. Utilities
 typing-extensions>=4.0.0 # Ensures type hints work smoothly
+
+
+pyyaml
