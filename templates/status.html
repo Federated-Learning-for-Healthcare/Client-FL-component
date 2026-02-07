@@ -1,0 +1,174 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Training Status</h1>
+    <p class="subtitle">
+      Monitor the live training progress of the hospital client connected to the
+      central server.
+    </p>
+  </div>
+  <div class="header-right">
+    <span id="stateBadge" class="pill">Loading…</span>
+    <span class="muted" id="lastUpdate">—</span>
+  </div>
+</div>
+
+<div class="card subtle">
+  <div class="kv2">
+    <div class="k">Node</div>
+    <div class="v" id="nodeName">—</div>
+    <div class="k">Connected to</div>
+    <div class="v mono" id="serverAddr">—</div>
+  </div>
+</div>
+
+<div class="layout-2col" style="margin-top: 14px">
+  <!-- LEFT: hero -->
+  <div class="card hero">
+    <div class="hero-title" id="heroTitle">TRAINING STATUS</div>
+
+    <div class="hero-metrics">
+      <div class="hero-metric">
+        <div class="label">Global Round</div>
+        <div class="big" id="globalRound">—</div>
+      </div>
+      <div class="hero-metric">
+        <div class="label">Client Round</div>
+        <div class="big" id="clientRound">—</div>
+      </div>
+    </div>
+
+    <div class="hero-metrics">
+      <div class="hero-metric">
+        <div class="label">Current Accuracy</div>
+        <div class="big" id="accuracy">—</div>
+      </div>
+      <div class="hero-metric">
+        <div class="label">Training Loss</div>
+        <div class="big" id="trainLoss">—</div>
+      </div>
+    </div>
+
+    <div class="muted" id="message">—</div>
+  </div>
+
+  <!-- RIGHT: chart -->
+  <div class="card">
+    <div class="card-title">Training Loss per Round</div>
+    <canvas id="lossChart" height="120"></canvas>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 14px">
+  <div class="card-title">Event Log</div>
+  <ul class="log" id="eventLog">
+    <li class="log-item"><span class="log-dot"></span>Waiting for events…</li>
+  </ul>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let lossChart;
+
+  async function fetchJSON(url) {
+    const r = await fetch(url);
+    return await r.json();
+  }
+
+  function setPill(state) {
+    const el = document.getElementById("stateBadge");
+    const s = (state || "UNKNOWN").toUpperCase();
+    el.textContent = s;
+    el.classList.remove("ok", "warn", "bad");
+    if (s === "IDLE" || s === "FINISHED") el.classList.add("ok");
+    else if (s === "TRAINING" || s === "CONNECTING") el.classList.add("warn");
+    else if (s === "ERROR") el.classList.add("bad");
+    else el.classList.add("warn");
+
+    const ht = document.getElementById("heroTitle");
+    if (s === "TRAINING") ht.textContent = "TRAINING IN PROGRESS";
+    else ht.textContent = s;
+  }
+
+  function initChart() {
+    const ctx = document.getElementById("lossChart");
+    lossChart = new Chart(ctx, {
+      type: "line",
+      data: { labels: [], datasets: [{ label: "Train Loss", data: [] }] },
+      options: { responsive: true, animation: false },
+    });
+  }
+
+  function updateChart(history) {
+    if (!history || !Array.isArray(history)) return;
+
+    // Your new history entries are: client_round/global_round/train_loss/accuracy
+    const labels = history.map((h) => h.global_round ?? h.client_round);
+    const loss = history.map((h) => h.train_loss);
+
+    lossChart.data.labels = labels;
+    lossChart.data.datasets[0].data = loss;
+    lossChart.update();
+  }
+
+  function setEvents(st) {
+    // If you don’t have events[] in backend yet, we synthesize a small log from state/history.
+    const el = document.getElementById("eventLog");
+    const items = [];
+
+    if (st.state) items.push(`${st.state}: ${st.message || ""}`.trim());
+    if (st.worker_running) items.push("Worker: RUNNING");
+    else items.push("Worker: STOPPED");
+
+    if (Array.isArray(st.history) && st.history.length > 0) {
+      const last = st.history[st.history.length - 1];
+      const r = last.global_round ?? last.client_round;
+      items.push(
+        `Round ${r}: train_loss=${last.train_loss ?? "—"}, acc=${last.accuracy ?? "—"}`,
+      );
+    }
+
+    el.innerHTML = items
+      .map((t) => `<li class="log-item"><span class="log-dot"></span>${t}</li>`)
+      .join("");
+  }
+
+  async function refresh() {
+    const cfg = await fetchJSON("/config");
+    const st = await fetchJSON("/status");
+
+    document.getElementById("serverAddr").textContent =
+      (cfg.runtime && cfg.runtime.server_address) || "—";
+    document.getElementById("nodeName").textContent =
+      (cfg.runtime && cfg.runtime.client_name) || "unknown";
+
+    setPill(st.state);
+    document.getElementById("lastUpdate").textContent = st.last_update || "—";
+    document.getElementById("message").textContent = st.message || "—";
+
+    // NOTE: your backend now uses global_round + client_round
+    document.getElementById("globalRound").textContent = st.global_round ?? "—";
+    document.getElementById("clientRound").textContent = st.client_round ?? "—";
+
+    // Make accuracy look like percent if it is 0..1
+    let acc = st.accuracy;
+    if (typeof acc === "number") {
+      if (acc <= 1) acc = (acc * 100).toFixed(1) + "%";
+      else acc = acc.toFixed(1) + "%";
+    } else acc = "—";
+    document.getElementById("accuracy").textContent = acc;
+
+    document.getElementById("trainLoss").textContent =
+      st.train_loss != null ? Number(st.train_loss).toFixed(4) : "—";
+
+    updateChart(st.history);
+    setEvents(st);
+  }
+
+  initChart();
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+
+{% endblock %}

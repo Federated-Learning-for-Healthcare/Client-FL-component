@@ -1,0 +1,351 @@
+:root {
+  --warm-bg: #fafaf8;
+  --warm-border: #e8e5e0;
+
+  --sage: #159cd1;
+  --sage-light: #e8f0e9;
+  --sage-dark: #556b72;
+
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+
+  --cream: #fefce8;
+  --coral: #e07a5f;
+
+  --text: #2d2d2a;
+  --text-secondary: #6b6b66;
+
+  --card-radius: 16px;
+  --shadow: 0 14px 30px rgba(42, 45, 45, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial;
+  background: var(--warm-bg);
+  color: var(--text);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.page {
+  padding: 26px 0 40px;
+}
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(250, 250, 248, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--warm-border);
+}
+
+.topnav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-badge {
+  width: 34px;
+  height: 34px;
+  background: var(--sage);
+  border-radius: 12px;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 18px;
+}
+.brand-title {
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.tabs {
+  display: flex;
+  gap: 22px;
+  position: relative;
+}
+.tab {
+  position: relative;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 22px 0;
+  transition: color 0.2s ease;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.active {
+  color: var(--sage);
+}
+.tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--sage);
+  border-radius: 999px;
+  animation: underline 0.25s ease-out;
+}
+@keyframes underline {
+  from {
+    transform: scaleX(0.6);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Page headings */
+.page-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+.page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.3px;
+}
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.header-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Layout */
+.layout-2col {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .layout-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards */
+.card {
+  background: white;
+  border: 1px solid var(--warm-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-title {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--warm-border);
+  background: rgba(250, 250, 248, 0.6);
+  font-weight: 700;
+}
+.card-body {
+  padding: 18px;
+}
+
+/* Small blocks */
+.identity-row {
+  display: flex;
+  gap: 12px;
+  padding: 18px;
+  padding-top: 14px;
+}
+.identity-item {
+  flex: 1;
+  border: 1px solid var(--warm-border);
+  border-radius: 14px;
+  padding: 12px 12px;
+  background: rgba(250, 250, 248, 0.9);
+}
+.identity-item.wide {
+  flex: 2;
+}
+.label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.value {
+  margin-top: 6px;
+  font-weight: 700;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Tiles */
+.tile-row {
+  display: flex;
+  gap: 12px;
+  padding: 18px;
+  padding-top: 14px;
+}
+.tile {
+  flex: 1;
+  border: 1px solid var(--warm-border);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(250, 250, 248, 0.9);
+}
+.tile.active {
+  border-color: rgba(107, 143, 113, 0.45);
+  background: rgba(232, 240, 233, 0.85);
+}
+.tile-title {
+  font-weight: 800;
+}
+.tile-sub {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* KV grid */
+.kv2 {
+  padding: 0 18px 18px;
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px 12px;
+}
+.k {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.v {
+  font-weight: 700;
+}
+
+/* Pills */
+.pill {
+  border: 1px solid var(--warm-border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 12px;
+  background: white;
+}
+.pill.small {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+.pill.ok {
+  color: var(--sage-dark);
+  background: var(--sage-light);
+  border-color: rgba(107, 143, 113, 0.25);
+}
+.pill.warn {
+  color: var(--amber);
+  background: var(--amber-light);
+  border-color: rgba(217, 119, 6, 0.25);
+}
+.pill.bad {
+  color: var(--coral);
+  background: rgba(224, 122, 95, 0.15);
+  border-color: rgba(224, 122, 95, 0.25);
+}
+
+/* Buttons */
+.actions {
+  padding: 18px;
+  display: flex;
+  gap: 12px;
+}
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+  background: var(--sage);
+  color: white;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.secondary {
+  background: transparent;
+  border: 1px solid rgba(107, 143, 113, 0.75);
+  color: var(--sage-dark);
+}
+
+/* Code box */
+.codebox {
+  margin: 0;
+  padding: 14px;
+  background: rgba(250, 250, 248, 0.9);
+  border: 1px solid var(--warm-border);
+  border-radius: 14px;
+  overflow: auto;
+  max-height: 420px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Helper text */
+.hint {
+  padding: 0 18px 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}

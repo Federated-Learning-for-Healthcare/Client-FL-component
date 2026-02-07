@@ -1,0 +1,155 @@
+{
+  "state": "FINISHED",
+  "round": null,
+  "accuracy": 0.6221666666666666,
+  "train_loss": 1.185285360066096,
+  "model": "kan",
+  "privacy": "gaussian",
+  "compression": "none",
+  "last_update": "2026-02-07T14:07:08.835386",
+  "message": "Training finished (client disconnected).",
+  "global_round": null,
+  "client_round": 10,
+  "history": [
+    {
+      "client_round": 1,
+      "global_round": null,
+      "train_loss": 0.3629337197929621,
+      "accuracy": 0.8867666666666667,
+      "timestamp": "2026-02-07T14:04:07.577721"
+    },
+    {
+      "client_round": 2,
+      "global_round": null,
+      "train_loss": 0.3629337197929621,
+      "accuracy": 0.8867666666666667,
+      "timestamp": "2026-02-07T14:04:07.625724"
+    },
+    {
+      "client_round": 2,
+      "global_round": null,
+      "train_loss": 0.8248255206346512,
+      "accuracy": 0.7669666666666667,
+      "timestamp": "2026-02-07T14:04:26.906819"
+    },
+    {
+      "client_round": 3,
+      "global_round": null,
+      "train_loss": 0.8248255206346512,
+      "accuracy": 0.7669666666666667,
+      "timestamp": "2026-02-07T14:04:26.961823"
+    },
+    {
+      "client_round": 3,
+      "global_round": null,
+      "train_loss": 1.0036301282604536,
+      "accuracy": 0.7493333333333333,
+      "timestamp": "2026-02-07T14:04:47.007363"
+    },
+    {
+      "client_round": 4,
+      "global_round": null,
+      "train_loss": 1.0036301282604536,
+      "accuracy": 0.7493333333333333,
+      "timestamp": "2026-02-07T14:04:47.054365"
+    },
+    {
+      "client_round": 4,
+      "global_round": null,
+      "train_loss": 0.8607649795770645,
+      "accuracy": 0.7559666666666667,
+      "timestamp": "2026-02-07T14:05:07.004123"
+    },
+    {
+      "client_round": 5,
+      "global_round": null,
+      "train_loss": 0.8607649795770645,
+      "accuracy": 0.7559666666666667,
+      "timestamp": "2026-02-07T14:05:07.052123"
+    },
+    {
+      "client_round": 5,
+      "global_round": null,
+      "train_loss": 1.117970500143369,
+      "accuracy": 0.6590666666666667,
+      "timestamp": "2026-02-07T14:05:26.942221"
+    },
+    {
+      "client_round": 6,
+      "global_round": null,
+      "train_loss": 1.117970500143369,
+      "accuracy": 0.6590666666666667,
+      "timestamp": "2026-02-07T14:05:26.995228"
+    },
+    {
+      "client_round": 6,
+      "global_round": null,
+      "train_loss": 1.0749840792338052,
+      "accuracy": 0.6650666666666667,
+      "timestamp": "2026-02-07T14:05:48.083086"
+    },
+    {
+      "client_round": 7,
+      "global_round": null,
+      "train_loss": 1.0749840792338052,
+      "accuracy": 0.6650666666666667,
+      "timestamp": "2026-02-07T14:05:48.135092"
+    },
+    {
+      "client_round": 7,
+      "global_round": null,
+      "train_loss": 0.7372757008830706,
+      "accuracy": 0.7864666666666666,
+      "timestamp": "2026-02-07T14:06:07.755838"
+    },
+    {
+      "client_round": 8,
+      "global_round": null,
+      "train_loss": 0.7372757008830706,
+      "accuracy": 0.7864666666666666,
+      "timestamp": "2026-02-07T14:06:07.806018"
+    },
+    {
+      "client_round": 8,
+      "global_round": null,
+      "train_loss": 0.9030735336661339,
+      "accuracy": 0.7556833333333334,
+      "timestamp": "2026-02-07T14:06:27.816275"
+    },
+    {
+      "client_round": 9,
+      "global_round": null,
+      "train_loss": 0.9030735336661339,
+      "accuracy": 0.7556833333333334,
+      "timestamp": "2026-02-07T14:06:27.872412"
+    },
+    {
+      "client_round": 9,
+      "global_round": null,
+      "train_loss": 0.9441784867366155,
+      "accuracy": 0.6953666666666667,
+      "timestamp": "2026-02-07T14:06:47.825687"
+    },
+    {
+      "client_round": 10,
+      "global_round": null,
+      "train_loss": 0.9441784867366155,
+      "accuracy": 0.6953666666666667,
+      "timestamp": "2026-02-07T14:06:47.874693"
+    },
+    {
+      "client_round": 10,
+      "global_round": null,
+      "train_loss": 1.185285360066096,
+      "accuracy": 0.6221666666666666,
+      "timestamp": "2026-02-07T14:07:08.741983"
+    },
+    {
+      "client_round": 10,
+      "global_round": null,
+      "train_loss": 1.185285360066096,
+      "accuracy": 0.6221666666666666,
+      "timestamp": "2026-02-07T14:07:08.835386"
+    }
+  ]
+}

@@ -25,7 +25,7 @@ def _params(cfg: Dict[str, Any], section: str) -> Dict[str, Any]:
     return p if isinstance(p, dict) else {}
 
 
-def build_from_config(cfg: Dict[str, Any]) -> BuiltClient:
+def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
     # Validate first (fail fast)
     validate_config(cfg)
 
@@ -82,6 +82,8 @@ def build_from_config(cfg: Dict[str, Any]) -> BuiltClient:
     runtime = cfg["runtime"]
     device = runtime["device"]
     server_address = runtime["server_address"]
+    runtime = cfg.get("runtime", {})
+    client_name = runtime.get("client_name", "unknown_client")
 
     # Compose ModularFlowerClient
     modular_client = ModularFlowerClient(
@@ -92,5 +94,7 @@ def build_from_config(cfg: Dict[str, Any]) -> BuiltClient:
         privacy=privacy,
         compression=compression,
         device=device,
+        status_store=status_store,
+        client_name=client_name,
     )
     return BuiltClient(client=modular_client, server_address=server_address)
