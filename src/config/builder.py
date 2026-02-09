@@ -64,37 +64,39 @@ def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
     data_params = _params(cfg, "data")
     loader = data_cls(**data_params) if data_params else data_cls()
     train_loader, test_loader = loader.load_data()
+    print("data loader ")
 
     # Instantiate modules
     trainer_cls = reg.trainers[trainer_type]
     trainer_params = _params(cfg, "trainer")
     trainer = trainer_cls(**trainer_params) if trainer_params else trainer_cls()
-
+    print("data loader: trainer selected")
     privacy_cls = reg.privacy[privacy_type]
-    privacy_params = _params(cfg, "privacy")
-    privacy = privacy_cls(**privacy_params) if privacy_params else privacy_cls()
-
+    # privacy_params = _params(cfg, "privacy")
+    # privacy = privacy_cls(**privacy_params) if privacy_params else privacy_cls()
+    print("data loader: privacy selected")
     compression_cls = reg.compression[compression_type]
     compression_params = _params(cfg, "compression")
     compression = compression_cls(**compression_params) if compression_params else compression_cls()
-
+    print("data loader: compression selected")
     # Runtime
     runtime = cfg["runtime"]
     device = runtime["device"]
     server_address = runtime["server_address"]
     runtime = cfg.get("runtime", {})
     client_name = runtime.get("client_name", "unknown_client")
-
+    print("data loader: runtime loaded")
     # Compose ModularFlowerClient
     modular_client = ModularFlowerClient(
         model=model,
         train_loader=train_loader,
         test_loader=test_loader,
         trainer=trainer,
-        privacy=privacy,
+        #privacy=privacy,
         compression=compression,
         device=device,
         status_store=status_store,
         client_name=client_name,
     )
+    print("done in buider")
     return BuiltClient(client=modular_client, server_address=server_address)

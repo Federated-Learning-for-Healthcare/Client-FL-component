@@ -19,12 +19,12 @@ data:
 trainer:
   type: standard
   params:
-    optimizer: sgd
-    lr: 0.01
+    optimizer: adam #sgd
+    lr: 0.001 #0.01
     momentum: 0.9
 
 privacy:
-  type: gaussian # options: gaussian, none
+  type: none #gaussian # options: gaussian, none
   params:
     noise_multiplier: 0.5
     clipping_norm: 1.0

@@ -55,6 +55,7 @@ class MNISTDataLoader(AbstractDataLoader):
             download=True,
             transform=transform
         )
+        print("done downloading")
 
         return (
             DataLoader(train_data, batch_size=self.batch_size, shuffle=self.shuffle),
