@@ -44,9 +44,9 @@ class FlowerWorker:
             built = build_from_config(cfg, status_store=self.status)
 
             fl.client.start_client(
-                server_address=built.server_address,
+                server_address=built.server_address,                
                 client=built.client.to_client()
-            )
+            )            
 
             self.status.update(state="FINISHED", message="Training finished (client disconnected).")
 

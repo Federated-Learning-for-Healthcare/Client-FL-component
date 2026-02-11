@@ -147,8 +147,7 @@ class ModularFlowerClient(fl.client.NumPyClient):
                 device=self.device,
             )
             or {}
-        )
-
+        )        
 
         # 3) Get updated weights
         updated_weights = self.get_parameters(config={})

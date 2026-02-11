@@ -12,6 +12,7 @@ from src.core.interfaces import (
 )
 
 # Import concrete implementations (these must exist after Step 01 refactor)
+from src.dataLoaders.cardiac_MRI import CardiacMRIDataLoader
 from src.modules.training import StandardPyTorchTrainer
 from src.modules.privacy import NoPrivacy, GaussianPrivacy
 from src.modules.compression import NoCompression
@@ -47,5 +48,6 @@ DEFAULT_REGISTRY = Registry(
     },
     data={
         "mnist": MNISTDataLoader,
+        "mri": CardiacMRIDataLoader,
     },
 )
