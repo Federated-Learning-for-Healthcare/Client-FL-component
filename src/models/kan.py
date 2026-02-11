@@ -130,8 +130,25 @@ class FastKAN(nn.Module):
         return x
 
 class KAN(FastKAN):
-    def __init__(self) -> None:
-        super().__init__([28*28, 24, 24, 10])
+    def __init__(
+        self,
+        layers_hidden: List[int],
+        grid_min: float = -2.0,
+        grid_max: float = 2.0,
+        num_grids: int = 8,
+        use_base_update: bool = True,
+        base_activation = F.silu,
+        spline_weight_init_scale: float = 0.1,
+    ) -> None:
+        super().__init__(
+            layers_hidden=layers_hidden,
+            grid_min=grid_min,
+            grid_max=grid_max,
+            num_grids=num_grids,
+            use_base_update=use_base_update,
+            base_activation=base_activation,
+            spline_weight_init_scale=spline_weight_init_scale,
+        )
 
     def forward(self, x):
         # Flatten the input for KAN

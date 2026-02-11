@@ -3,14 +3,14 @@ model:
   type: kan # options: kan, mlp
   params:
     # for kan (example)
-    layers_hidden: [784, 24, 24, 10]
+    layers_hidden: [1024, 24, 24, 2]
     grid_min: -2.0
     grid_max: 2.0
     num_grids: 8
     use_base_update: true
 
 data:
-  type: mnist # options: mnist (later: ecg, ehr, mri)
+  type: mri # options: mnist (later: ecg, ehr, mri)
   params:
     batch_size: 32
     shuffle: true

@@ -54,6 +54,7 @@ def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
     model_params = _params(cfg, "model")
     # Your KAN() currently takes no args. If you want config-driven KAN params later,
     # update KAN __init__ to accept them. For now we instantiate without args safely:
+
     try:
         model = model_cls(**model_params)
     except TypeError:
@@ -69,16 +70,20 @@ def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
     # Instantiate modules
     trainer_cls = reg.trainers[trainer_type]
     trainer_params = _params(cfg, "trainer")
+    print("trainer params: ", trainer_params)
     trainer = trainer_cls(**trainer_params) if trainer_params else trainer_cls()
     print("data loader: trainer selected")
+
     privacy_cls = reg.privacy[privacy_type]
     # privacy_params = _params(cfg, "privacy")
     # privacy = privacy_cls(**privacy_params) if privacy_params else privacy_cls()
     print("data loader: privacy selected")
+
     compression_cls = reg.compression[compression_type]
     compression_params = _params(cfg, "compression")
     compression = compression_cls(**compression_params) if compression_params else compression_cls()
     print("data loader: compression selected")
+
     # Runtime
     runtime = cfg["runtime"]
     device = runtime["device"]
@@ -86,6 +91,7 @@ def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
     runtime = cfg.get("runtime", {})
     client_name = runtime.get("client_name", "unknown_client")
     print("data loader: runtime loaded")
+
     # Compose ModularFlowerClient
     modular_client = ModularFlowerClient(
         model=model,
@@ -98,5 +104,7 @@ def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
         status_store=status_store,
         client_name=client_name,
     )
+
     print("done in buider")
+    
     return BuiltClient(client=modular_client, server_address=server_address)
