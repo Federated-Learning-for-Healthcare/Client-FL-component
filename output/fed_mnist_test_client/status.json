@@ -1,0 +1,16 @@
+{
+  "state": "IDLE",
+  "global_round": null,
+  "client_round": 0,
+  "model": null,
+  "privacy": null,
+  "compression": null,
+  "message": "Service started",
+  "last_update": "2026-04-10T17:55:31.177113",
+  "train_loss": null,
+  "train_accuracy": null,
+  "eval_loss": null,
+  "eval_accuracy": null,
+  "train_history": [],
+  "eval_history": []
+}

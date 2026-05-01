@@ -1,0 +1,30 @@
+compression:
+  params:
+    bits: 16
+    top_k_ratio: 0.1
+  type: none
+data:
+  type: mnist
+model:
+  params:
+    layers_hidden:
+    - 784
+    - 24
+    - 24
+    - 10
+  type: kan
+privacy:
+  params:
+    clipping_norm: 1
+    noise_multiplier: 1
+  type: none
+runtime:
+  device: cpu
+  log_level: info
+  server_address: 127.0.0.1:8080
+trainer:
+  params:
+    lr: 0.001
+    momentum: 0.9
+    optimizer: adam
+  type: standard

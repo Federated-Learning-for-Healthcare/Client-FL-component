@@ -1,16 +1,152 @@
-# conf/config.yaml
+# # Healthcare FL Client — Configuration
+
+# model:
+#   type: kan # options: kan | mlp
+#   params:
+#     layers_hidden: [784, 24, 24, 10] # MNIST default
+#     # Cleveland EHR:  [13, 32, 16, 2]
+#     # MIT-BIH ECG:    [187, 64, 32, 5]
+#     grid_min: -2.0
+#     grid_max: 2.0
+#     num_grids: 8
+#     use_base_update: true
+
+# data:
+#   type: mnist # options: mnist | cleveland_ehr | mitbih_ecg
+#   params:
+#     batch_size: 32
+#     shuffle: true
+#     data_root: "./data"
+
+# trainer:
+#   type: standard
+#   params:
+#     optimizer: adam # options: adam | sgd
+#     lr: 0.001
+#     momentum: 0.9
+
+# privacy:
+#   type: none # options: none | gaussian | dpsgd
+#   params:
+#     noise_multiplier: 1.0
+#     clipping_norm: 1.0
+
+# compression:
+#   type: none # options: none | topk | quantize
+#   params:
+#     top_k_ratio: 0.1 # topk only
+#     bits: 16 # quantize only: 16 or 8
+
+# runtime:
+#   device: cpu # options: cpu | cuda
+#   server_address: "127.0.0.1:8080"
+#   client_name: "hospital_client_01"
+#   log_level: "info"
+
+# # # ─────────────────────────────────────────────────────────────
+# # # Healthcare FL Client — Configuration
+# # # ─────────────────────────────────────────────────────────────
+
+# # model:
+# #   type: kan # options: kan | mlp
+# #   params:
+# #     layers_hidden: [784, 24, 24, 10] # MNIST default
+# #     # Cleveland EHR:  [13, 32, 16, 2]
+# #     # MIT-BIH ECG:    [187, 64, 32, 5]
+# #     grid_min: -2.0
+# #     grid_max: 2.0
+# #     num_grids: 8
+# #     use_base_update: true
+
+# # data:
+# #   type: mnist # options: mnist | cleveland_ehr | mitbih_ecg
+# #   params:
+# #     batch_size: 32
+# #     shuffle: true
+# #     data_root: "./data"
+
+# # trainer:
+# #   type: standard
+# #   params:
+# #     optimizer: adam # options: adam | sgd
+# #     lr: 0.001
+# #     momentum: 0.9 # used only for sgd
+
+# # privacy:
+# #   type: none # options: none | gaussian | dpsgd
+# #   params:
+# #     noise_multiplier: 1.0 # dpsgd: sigma. gaussian: noise scale
+# #     clipping_norm: 1.0 # dpsgd/gaussian: L2 clip bound C
+
+# # compression:
+# #   type: none # options: none | topk | quantize
+# #   params:
+# #     top_k_ratio: 0.1 # topk: fraction of params to keep (0,1]
+# #     bits: 16 # quantize: 16 (float16) or 8 (int8)
+
+# # runtime:
+# #   device: cpu # options: cpu | cuda
+# #   server_address: "127.0.0.1:8080"
+# #   client_name: "hospital_client_01"
+# #   log_level: "info" # options: debug | info | warning | error
+
+# # # # conf/config.yaml
+# # # model:
+# # #   type: kan # options: kan, mlp
+# # #   params:
+# # #     # for kan (example)
+# # #     layers_hidden: [784, 24, 24, 10]
+# # #     grid_min: -2.0
+# # #     grid_max: 2.0
+# # #     num_grids: 8
+# # #     use_base_update: true
+
+# # # data:
+# # #   type: mnist # options: mnist (later: ecg, ehr, mri)
+# # #   params:
+# # #     batch_size: 32
+# # #     shuffle: true
+# # #     data_root: "./data"
+
+# # # trainer:
+# # #   type: standard
+# # #   params:
+# # #     optimizer: adam #sgd
+# # #     lr: 0.001 #0.01
+# # #     momentum: 0.9
+
+# # # privacy:
+# # #   type: none #gaussian # options: gaussian, none
+# # #   params:
+# # #     noise_multiplier: 0.5
+# # #     clipping_norm: 1.0
+
+# # # compression:
+# # #   type: none # options: none (later: quantize, sparsify)
+# # #   params: {}
+
+# # # runtime:
+# # #   device: cpu # options: cpu, cuda
+# # #   server_address: "127.0.0.1:8080"
+# # #   client_name: "hospital_client_01"
+# # #   log_level: "info"
+
+# Healthcare FL Client — default single-federation config
+# For multi-federation deployment use conf/federations/*.yaml instead
+
 model:
-  type: kan # options: kan, mlp
+  type: kan # options: kan | mlp
   params:
-    # for kan (example)
-    layers_hidden: [784, 24, 24, 10]
+    layers_hidden: [784, 24, 24, 10] # MNIST default
+    # Cleveland EHR:  [13, 32, 16, 2]
+    # MIT-BIH ECG:    [187, 64, 32, 5]
     grid_min: -2.0
     grid_max: 2.0
     num_grids: 8
     use_base_update: true
 
 data:
-  type: mnist # options: mnist (later: ecg, ehr, mri)
+  type: mnist # options: mnist | ehr | ecg
   params:
     batch_size: 32
     shuffle: true
@@ -19,22 +155,24 @@ data:
 trainer:
   type: standard
   params:
-    optimizer: adam #sgd
-    lr: 0.001 #0.01
+    optimizer: adam # options: adam | sgd
+    lr: 0.001
     momentum: 0.9
 
 privacy:
-  type: none #gaussian # options: gaussian, none
+  type: none # options: none | gaussian | dpsgd
   params:
-    noise_multiplier: 0.5
+    noise_multiplier: 1.0
     clipping_norm: 1.0
 
 compression:
-  type: none # options: none (later: quantize, sparsify)
-  params: {}
+  type: none # options: none | topk | quantize
+  params:
+    top_k_ratio: 0.1
+    bits: 16
 
 runtime:
-  device: cpu # options: cpu, cuda
+  device: cpu
   server_address: "127.0.0.1:8080"
   client_name: "hospital_client_01"
   log_level: "info"

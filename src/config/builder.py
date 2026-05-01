@@ -1,102 +1,171 @@
-# will instantiate modules
-# src/config/builder.py
+"""
+builder.py — Factory: builds all modules from config dict.
+
+Fix: removed output_dir default parameter. CheckpointStore is only
+created here when not supplied AND an explicit checkpoint_dir is given.
+When called from _fl_process, checkpoint_store is always passed in
+explicitly so the builder never needs to derive a path itself.
+"""
+
 from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-import torch
-
-from src.core.client import ModularFlowerClient
 from src.config.registry import DEFAULT_REGISTRY
-from src.config.schema import validate_config, ConfigError
+from src.config.schema import ConfigError, validate_config
+from src.core.client import ModularFlowerClient
+from src.observerbility.checkpoint_store import CheckpointStore
+from src.observerbility.metrics_store import MetricsStore
+
+logger = logging.getLogger(__name__)
+
+_NO_PARAM_CLASSES = {"none"}
 
 
 @dataclass
 class BuiltClient:
-    client: ModularFlowerClient
-    server_address: str
+    client:           ModularFlowerClient
+    server_address:   str
+    federation_id:    str
+    checkpoint_store: Optional[CheckpointStore]
 
 
-def _params(cfg: Dict[str, Any], section: str) -> Dict[str, Any]:
+def _instantiate(cls, type_key: str, params: Dict) -> Any:
+    if type_key in _NO_PARAM_CLASSES or not params:
+        return cls()
+    try:
+        return cls(**params)
+    except TypeError as e:
+        raise ConfigError(
+            f"Failed to instantiate {cls.__name__} with params {params}: {e}"
+        ) from e
+
+
+def _params(cfg: Dict, section: str) -> Dict:
     block = cfg.get(section, {})
-    if not isinstance(block, dict):
-        return {}
     p = block.get("params", {})
     return p if isinstance(p, dict) else {}
 
 
-def build_from_config(cfg: Dict[str, Any], status_store=None) -> BuiltClient:
-    # Validate first (fail fast)
-    validate_config(cfg)
+def build_from_config(
+    cfg:              Dict[str, Any],
+    status_store=     None,
+    metrics_store:    Optional[MetricsStore] = None,
+    checkpoint_store: Optional[CheckpointStore] = None,
+    federation_id:    str = "default",
+) -> BuiltClient:
+    """
+    Build a complete ModularFlowerClient from a config dict.
 
+    checkpoint_store should always be passed explicitly by the caller
+    (FederationManager or _fl_process). If not supplied, checkpointing
+    is disabled — no default path is guessed because the caller's cwd
+    may not be predictable (especially in subprocesses).
+    """
+    validate_config(cfg)
     reg = DEFAULT_REGISTRY
 
-    # Resolve types
-    model_type = cfg["model"]["type"]
-    data_type = cfg["data"]["type"]
-    trainer_type = cfg["trainer"]["type"]
-    privacy_type = cfg["privacy"]["type"]
+    model_type       = cfg["model"]["type"]
+    data_type        = cfg["data"]["type"]
+    trainer_type     = cfg["trainer"]["type"]
+    privacy_type     = cfg["privacy"]["type"]
     compression_type = cfg["compression"]["type"]
 
-    if model_type not in reg.models:
-        raise ConfigError(f"Unsupported model.type: '{model_type}'")
-    if data_type not in reg.data:
-        raise ConfigError(f"Unsupported data.type: '{data_type}'")
-    if trainer_type not in reg.trainers:
-        raise ConfigError(f"Unsupported trainer.type: '{trainer_type}'")
-    if privacy_type not in reg.privacy:
-        raise ConfigError(f"Unsupported privacy.type: '{privacy_type}'")
-    if compression_type not in reg.compression:
-        raise ConfigError(f"Unsupported compression.type: '{compression_type}'")
-
-    # Instantiate model
-    model_cls = reg.models[model_type]
-    model_params = _params(cfg, "model")
-    # Your KAN() currently takes no args. If you want config-driven KAN params later,
-    # update KAN __init__ to accept them. For now we instantiate without args safely:
-    try:
-        model = model_cls(**model_params)
-    except TypeError:
-        model = model_cls()
-
-    # Instantiate data loader
-    data_cls = reg.data[data_type]
-    data_params = _params(cfg, "data")
-    loader = data_cls(**data_params) if data_params else data_cls()
-    train_loader, test_loader = loader.load_data()
-    print("data loader ")
-
-    # Instantiate modules
-    trainer_cls = reg.trainers[trainer_type]
-    trainer_params = _params(cfg, "trainer")
-    trainer = trainer_cls(**trainer_params) if trainer_params else trainer_cls()
-    print("data loader: trainer selected")
-    privacy_cls = reg.privacy[privacy_type]
-    # privacy_params = _params(cfg, "privacy")
-    # privacy = privacy_cls(**privacy_params) if privacy_params else privacy_cls()
-    print("data loader: privacy selected")
-    compression_cls = reg.compression[compression_type]
-    compression_params = _params(cfg, "compression")
-    compression = compression_cls(**compression_params) if compression_params else compression_cls()
-    print("data loader: compression selected")
-    # Runtime
-    runtime = cfg["runtime"]
-    device = runtime["device"]
-    server_address = runtime["server_address"]
-    runtime = cfg.get("runtime", {})
-    client_name = runtime.get("client_name", "unknown_client")
-    print("data loader: runtime loaded")
-    # Compose ModularFlowerClient
-    modular_client = ModularFlowerClient(
-        model=model,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        trainer=trainer,
-        #privacy=privacy,
-        compression=compression,
-        device=device,
-        status_store=status_store,
-        client_name=client_name,
+    logger.info(
+        "[%s] Building — model=%s  data=%s  trainer=%s  privacy=%s  compression=%s",
+        federation_id, model_type, data_type,
+        trainer_type, privacy_type, compression_type,
     )
-    print("done in buider")
-    return BuiltClient(client=modular_client, server_address=server_address)
+
+    # Model
+    model_cls = reg.models.get(model_type)
+    if not model_cls:
+        raise ConfigError(
+            f"Unknown model type '{model_type}'. Available: {list(reg.models)}"
+        )
+    model = _instantiate(model_cls, model_type, _params(cfg, "model"))
+    logger.info("[%s] Model: %s", federation_id, model.__class__.__name__)
+
+    if metrics_store is not None:
+        param_count = sum(p.numel() for p in model.parameters())
+        metrics_store.param_count = param_count
+        metrics_store.model_type  = model_type
+        logger.info("[%s] Model param count: %d", federation_id, param_count)
+
+    # Data
+    data_cls = reg.data.get(data_type)
+    if not data_cls:
+        raise ConfigError(
+            f"Unknown data type '{data_type}'. Available: {list(reg.data)}"
+        )
+    loader = _instantiate(data_cls, data_type, _params(cfg, "data"))
+    train_loader, test_loader = loader.load_data()
+    logger.info("[%s] Data: %s", federation_id, data_cls.__name__)
+
+    # Trainer
+    trainer_cls = reg.trainers.get(trainer_type)
+    if not trainer_cls:
+        raise ConfigError(
+            f"Unknown trainer type '{trainer_type}'. Available: {list(reg.trainers)}"
+        )
+    trainer = _instantiate(trainer_cls, trainer_type, _params(cfg, "trainer"))
+    logger.info("[%s] Trainer: %s", federation_id, trainer_cls.__name__)
+
+    # Privacy
+    privacy_cls = reg.privacy.get(privacy_type)
+    if not privacy_cls:
+        raise ConfigError(
+            f"Unknown privacy type '{privacy_type}'. Available: {list(reg.privacy)}"
+        )
+    privacy = _instantiate(privacy_cls, privacy_type, _params(cfg, "privacy"))
+    logger.info("[%s] Privacy: %s", federation_id, repr(privacy))
+
+    # Compression
+    compression_cls = reg.compression.get(compression_type)
+    if not compression_cls:
+        raise ConfigError(
+            f"Unknown compression type '{compression_type}'. "
+            f"Available: {list(reg.compression)}"
+        )
+    compression = _instantiate(
+        compression_cls, compression_type, _params(cfg, "compression")
+    )
+    logger.info("[%s] Compression: %s", federation_id, repr(compression))
+
+    runtime        = cfg.get("runtime", {})
+    device         = runtime.get("device", "cpu")
+    server_address = runtime["server_address"]
+    client_name    = runtime.get("client_name", federation_id)
+
+    if checkpoint_store is None:
+        logger.warning(
+            "[%s] No checkpoint_store supplied — checkpointing disabled. "
+            "Pass checkpoint_store explicitly to enable.", federation_id
+        )
+
+    client = ModularFlowerClient(
+        model             = model,
+        train_loader      = train_loader,
+        test_loader       = test_loader,
+        trainer           = trainer,
+        privacy           = privacy,
+        compression       = compression,
+        device            = device,
+        status_store      = status_store,
+        metrics_store     = metrics_store,
+        checkpoint_store  = checkpoint_store,
+        client_name       = client_name,
+    )
+
+    logger.info("[%s] Client built — server=%s  device=%s  checkpointing=%s",
+                federation_id, server_address, device, checkpoint_store is not None)
+
+    return BuiltClient(
+        client           = client,
+        server_address   = server_address,
+        federation_id    = federation_id,
+        checkpoint_store = checkpoint_store,
+    )

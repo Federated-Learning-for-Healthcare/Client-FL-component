@@ -1,0 +1,338 @@
+<!-- {% extends "base.html" %} {% block content %}
+<div class="page-header">
+  <h2>Training Logs</h2>
+  <button id="refresh-btn" class="btn btn-secondary" onclick="loadLogs()">
+    Refresh
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span>Federation status</span>
+    <span id="log-state" class="badge">—</span>
+  </div>
+  <div
+    class="log-meta"
+    id="log-meta"
+    style="
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+    "
+  >
+    Waiting for data...
+  </div>
+  <div
+    id="log-container"
+    style="
+      font-family: monospace;
+      font-size: 0.82rem;
+      background: var(--bg-code, #1e1e1e);
+      color: var(--text-code, #d4d4d4);
+      padding: 1rem;
+      min-height: 320px;
+      max-height: 520px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      border-radius: 0 0 8px 8px;
+    "
+  >
+    No log data yet. Start training to see updates.
+  </div>
+</div>
+
+<div class="card" style="margin-top: 1.25rem">
+  <div class="card-header">Training history</div>
+  <div style="padding: 1rem">
+    <table
+      id="history-table"
+      style="width: 100%; border-collapse: collapse; font-size: 0.88rem"
+    >
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border-color)">
+          <th style="padding: 0.5rem; text-align: left">Round</th>
+          <th style="padding: 0.5rem; text-align: right">Train loss</th>
+          <th style="padding: 0.5rem; text-align: right">Train acc</th>
+          <th style="padding: 0.5rem; text-align: right">Eval loss</th>
+          <th style="padding: 0.5rem; text-align: right">Eval acc</th>
+          <th style="padding: 0.5rem; text-align: right">Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="history-body">
+        <tr>
+          <td
+            colspan="6"
+            style="
+              padding: 0.75rem;
+              color: var(--text-muted);
+              text-align: center;
+            "
+          >
+            No history yet.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const stateColors = {
+    IDLE: "#888",
+    CONNECTING: "#f59e0b",
+    TRAINING: "#3b82f6",
+    FINISHED: "#10b981",
+    ERROR: "#ef4444",
+  };
+
+  async function loadLogs() {
+    try {
+      const res = await fetch("/status");
+      const st = await res.json();
+
+      // State badge
+      const badge = document.getElementById("log-state");
+      badge.textContent = st.state || "—";
+      badge.style.background = stateColors[st.state] || "#888";
+
+      // Meta info
+      document.getElementById("log-meta").textContent =
+        `Model: ${st.model || "—"}  |  Privacy: ${st.privacy || "—"}  |  ` +
+        `Compression: ${st.compression || "—"}  |  ` +
+        `Last update: ${st.last_update ? new Date(st.last_update).toLocaleTimeString() : "—"}`;
+
+      // Log message
+      const logBox = document.getElementById("log-container");
+      const lines = [];
+      lines.push(`[state]       ${st.state || "—"}`);
+      lines.push(`[message]     ${st.message || "—"}`);
+      lines.push(
+        `[round]       global=${st.global_round ?? "—"}  client=${st.client_round ?? "—"}`,
+      );
+      lines.push(
+        `[train]       loss=${st.train_loss != null ? st.train_loss.toFixed(4) : "—"}  acc=${st.train_accuracy != null ? (st.train_accuracy * 100).toFixed(2) + "%" : "—"}`,
+      );
+      lines.push(
+        `[eval]        loss=${st.eval_loss != null ? st.eval_loss.toFixed(4) : "—"}  acc=${st.eval_accuracy != null ? (st.eval_accuracy * 100).toFixed(2) + "%" : "—"}`,
+      );
+      if (st.compression_ratio != null) {
+        lines.push(`[compression] ratio=${st.compression_ratio.toFixed(2)}x`);
+      }
+      logBox.textContent = lines.join("\n");
+
+      // History table — use train_history (fixed field name)
+      const history = st.train_history || [];
+      const evalHistory = st.eval_history || [];
+      const evalMap = {};
+      evalHistory.forEach((e) => {
+        evalMap[e.client_round] = e;
+      });
+
+      const tbody = document.getElementById("history-body");
+      if (history.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="6" style="padding: 0.75rem; color: var(--text-muted); text-align: center;">No history yet.</td></tr>';
+      } else {
+        tbody.innerHTML = [...history]
+          .reverse()
+          .map((h) => {
+            const ev = evalMap[h.client_round] || {};
+            return `<tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 0.4rem 0.5rem;">${h.client_round}</td>
+            <td style="padding: 0.4rem 0.5rem; text-align: right;">${h.train_loss != null ? h.train_loss.toFixed(4) : "—"}</td>
+            <td style="padding: 0.4rem 0.5rem; text-align: right;">${h.train_accuracy != null ? (h.train_accuracy * 100).toFixed(1) + "%" : "—"}</td>
+            <td style="padding: 0.4rem 0.5rem; text-align: right;">${ev.eval_loss != null ? ev.eval_loss.toFixed(4) : "—"}</td>
+            <td style="padding: 0.4rem 0.5rem; text-align: right;">${ev.eval_accuracy != null ? (ev.eval_accuracy * 100).toFixed(1) + "%" : "—"}</td>
+            <td style="padding: 0.4rem 0.5rem; text-align: right; color: var(--text-muted); font-size: 0.78rem;">${h.timestamp ? new Date(h.timestamp).toLocaleTimeString() : "—"}</td>
+          </tr>`;
+          })
+          .join("");
+      }
+    } catch (e) {
+      document.getElementById("log-container").textContent =
+        `Error fetching status: ${e.message}`;
+    }
+  }
+
+  // Auto-refresh every 3s
+  loadLogs();
+  setInterval(loadLogs, 3000);
+</script>
+{% endblock %} -->
+{% extends "base.html" %} {% block content %}
+
+<div class="page-header">
+  <div>
+    <h2>{{ title }}</h2>
+    <div
+      style="
+        font-size: 0.82rem;
+        color: var(--color-text-secondary);
+        margin-top: 2px;
+      "
+    >
+      <a href="/" style="color: var(--color-text-secondary)">Dashboard</a>
+      &rsaquo; {{ federation_id }}
+    </div>
+  </div>
+  <button class="btn btn-secondary" onclick="loadLogs()">Refresh</button>
+</div>
+
+<div class="card" style="margin-bottom: 1.25rem">
+  <div
+    class="card-header"
+    style="display: flex; align-items: center; justify-content: space-between"
+  >
+    <span>Live status</span>
+    <span
+      id="log-state"
+      class="badge"
+      style="
+        background: #888;
+        color: #fff;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+      "
+      >—</span
+    >
+  </div>
+  <div
+    id="log-meta"
+    style="
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      color: var(--color-text-secondary);
+      border-bottom: 1px solid var(--color-border-tertiary);
+    "
+  >
+    —
+  </div>
+  <div
+    id="log-box"
+    style="
+      font-family: monospace;
+      font-size: 0.82rem;
+      padding: 1rem;
+      min-height: 180px;
+      white-space: pre-wrap;
+      background: var(--color-background-tertiary);
+      border-radius: 0 0 8px 8px;
+    "
+  >
+    —
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Round history</div>
+  <div style="overflow-x: auto; padding: 1rem">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--color-border-tertiary)">
+          <th style="padding: 0.4rem 0.6rem; text-align: left">Round</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Train loss</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Train acc</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Eval loss</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Eval acc</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Bytes</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Ratio</th>
+          <th style="padding: 0.4rem 0.6rem; text-align: right">Time</th>
+        </tr>
+      </thead>
+      <tbody id="history-body">
+        <tr>
+          <td
+            colspan="8"
+            style="
+              padding: 1rem;
+              text-align: center;
+              color: var(--color-text-secondary);
+            "
+          >
+            No history yet.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const FED_ID = "{{ federation_id }}";
+  const stateColors = {
+    IDLE: "#888",
+    CONNECTING: "#f59e0b",
+    TRAINING: "#3b82f6",
+    FINISHED: "#10b981",
+    ERROR: "#ef4444",
+  };
+
+  function fmtBytes(b) {
+    if (b == null || b === "") return "—";
+    b = +b;
+    if (b < 1024) return b + " B";
+    if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    return (b / 1048576).toFixed(2) + " MB";
+  }
+
+  async function loadLogs() {
+    try {
+      const st = await (await fetch(`/federations/${FED_ID}/status`)).json();
+
+      const badge = document.getElementById("log-state");
+      badge.textContent = st.state || "—";
+      badge.style.background = stateColors[st.state] || "#888";
+
+      document.getElementById("log-meta").textContent =
+        `model: ${st.model || "—"}  |  privacy: ${st.privacy || "—"}  |  compression: ${st.compression || "—"}  |  updated: ${st.last_update ? new Date(st.last_update).toLocaleTimeString() : "—"}`;
+
+      const lines = [
+        `state         ${st.state || "—"}`,
+        `message       ${st.message || "—"}`,
+        `round         global=${st.global_round ?? "—"}  client=${st.client_round ?? "—"}`,
+        `train         loss=${st.train_loss != null ? st.train_loss.toFixed(4) : "—"}  acc=${st.train_accuracy != null ? (st.train_accuracy * 100).toFixed(2) + "%" : "—"}`,
+        `eval          loss=${st.eval_loss != null ? st.eval_loss.toFixed(4) : "—"}  acc=${st.eval_accuracy != null ? (st.eval_accuracy * 100).toFixed(2) + "%" : "—"}`,
+        `compression   ratio=${st.compression_ratio != null ? st.compression_ratio.toFixed(2) + "x" : "—"}  bytes=${fmtBytes(st.update_size_bytes)}`,
+      ];
+      document.getElementById("log-box").textContent = lines.join("\n");
+
+      // History table — from train_history + eval_history
+      const trainHist = st.train_history || [];
+      const evalMap = {};
+      (st.eval_history || []).forEach((e) => {
+        evalMap[e.client_round] = e;
+      });
+
+      const tbody = document.getElementById("history-body");
+      if (trainHist.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="8" style="padding:1rem;text-align:center;color:var(--color-text-secondary);">No history yet.</td></tr>';
+      } else {
+        tbody.innerHTML = [...trainHist]
+          .reverse()
+          .map((h) => {
+            const ev = evalMap[h.client_round] || {};
+            return `<tr style="border-bottom:1px solid var(--color-border-tertiary);">
+          <td style="padding:0.35rem 0.6rem;">${h.client_round}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;">${h.train_loss != null ? h.train_loss.toFixed(4) : "—"}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;">${h.train_accuracy != null ? (h.train_accuracy * 100).toFixed(1) + "%" : "—"}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;">${ev.eval_loss != null ? ev.eval_loss.toFixed(4) : "—"}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;">${ev.eval_accuracy != null ? (ev.eval_accuracy * 100).toFixed(1) + "%" : "—"}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;font-size:0.78rem;">${fmtBytes(h.update_size_bytes)}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;">${h.compression_ratio != null ? h.compression_ratio.toFixed(2) + "x" : "—"}</td>
+          <td style="padding:0.35rem 0.6rem;text-align:right;font-size:0.78rem;color:var(--color-text-secondary);">${h.timestamp ? new Date(h.timestamp).toLocaleTimeString() : "—"}</td>
+        </tr>`;
+          })
+          .join("");
+      }
+    } catch (e) {
+      document.getElementById("log-box").textContent = "Error: " + e.message;
+    }
+  }
+
+  loadLogs();
+  setInterval(loadLogs, 3000);
+</script>
+{% endblock %}
