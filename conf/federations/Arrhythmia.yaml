@@ -1,0 +1,54 @@
+# Federation: Arrhythmia Detection
+# Dataset:    MIT-BIH ECG Heartbeat (Kaggle CSV)
+# Model:      KAN  [187 → 64 → 32 → 5]
+# Privacy:    DP-SGD  ε budget independent from heart_disease federation
+# Server:     FL server B
+#
+# Download dataset before running:
+#   https://www.kaggle.com/datasets/shayanfazeli/heartbeat
+#   Place mitbih_train.csv and mitbih_test.csv in ./data/mitbih/
+
+model:
+  type: kan
+  params:
+    layers_hidden: [187, 64, 32, 5]
+    grid_min: -2.0
+    grid_max: 2.0
+    num_grids: 8
+    use_base_update: true
+
+data:
+  type: ecg
+  params:
+    data_dir: ./data/mitbih
+    batch_size: 64
+    balance_classes: true
+    max_samples_per_class: 5000
+    num_clients: 1 # set > 1 to simulate FL partitioning
+    client_id: 0
+    random_seed: 42
+    refresh_each_round: false
+
+trainer:
+  type: standard
+  params:
+    optimizer: adam
+    lr: 0.001
+    momentum: 0.9
+
+privacy:
+  type: dpsgd # independent ε from heart_disease federation
+  params:
+    noise_multiplier: 0.8
+    clipping_norm: 1.2
+
+compression:
+  type: quantize # different compression from heart_disease
+  params:
+    bits: 16
+
+runtime:
+  device: cpu
+  server_address: "127.0.0.1:8081"
+  client_name: "hospital_01_arrhythmia"
+  log_level: "info"

@@ -1,0 +1,317 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="page-header">
+  <h2>FL Client Dashboard</h2>
+  <div style="display: flex; gap: 0.5rem">
+    <button class="btn btn-primary" onclick="startAll()">Start all</button>
+    <button class="btn btn-danger" onclick="stopAll()">Stop all</button>
+  </div>
+</div>
+
+<!-- Summary bar -->
+<div
+  id="summary-bar"
+  style="
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-border-tertiary);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  "
+>
+  <span
+    >Federations: <strong id="fed-count">{{ federations|length }}</strong></span
+  >
+  <span>Running: <strong id="running-count">0</strong></span>
+  <span>Last refresh: <span id="last-refresh">—</span></span>
+</div>
+
+<!-- Federation cards grid -->
+<div
+  id="fed-grid"
+  style="
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  "
+>
+  {% for fed_id in federations %}
+  <div
+    class="fed-card"
+    id="card-{{ fed_id }}"
+    style="
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: 12px;
+      padding: 1.25rem;
+      background: var(--color-background-secondary);
+    "
+  >
+    <!-- Card header -->
+    <div
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+      "
+    >
+      <div>
+        <div
+          style="
+            font-weight: 500;
+            font-size: 1rem;
+            color: var(--color-text-primary);
+          "
+        >
+          {{ fed_id }}
+        </div>
+        <div
+          class="fed-state"
+          id="state-{{ fed_id }}"
+          style="
+            font-size: 0.78rem;
+            margin-top: 2px;
+            color: var(--color-text-secondary);
+          "
+        >
+          —
+        </div>
+      </div>
+      <span
+        class="fed-badge"
+        id="badge-{{ fed_id }}"
+        style="
+          display: inline-block;
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          background: #e5e7eb;
+          color: #374151;
+        "
+        >—</span
+      >
+    </div>
+
+    <!-- Metrics row -->
+    <div
+      style="
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      "
+    >
+      <div style="text-align: center">
+        <div style="font-size: 0.7rem; color: var(--color-text-secondary)">
+          Round
+        </div>
+        <div
+          class="fed-round"
+          id="round-{{ fed_id }}"
+          style="font-size: 1.1rem; font-weight: 500"
+        >
+          —
+        </div>
+      </div>
+      <div style="text-align: center">
+        <div style="font-size: 0.7rem; color: var(--color-text-secondary)">
+          Train acc
+        </div>
+        <div
+          class="fed-acc"
+          id="acc-{{ fed_id }}"
+          style="font-size: 1.1rem; font-weight: 500"
+        >
+          —
+        </div>
+      </div>
+      <div style="text-align: center">
+        <div style="font-size: 0.7rem; color: var(--color-text-secondary)">
+          Compression
+        </div>
+        <div
+          class="fed-ratio"
+          id="ratio-{{ fed_id }}"
+          style="font-size: 1.1rem; font-weight: 500"
+        >
+          —
+        </div>
+      </div>
+    </div>
+
+    <!-- Message -->
+    <div
+      class="fed-msg"
+      id="msg-{{ fed_id }}"
+      style="
+        font-size: 0.78rem;
+        color: var(--color-text-secondary);
+        margin-bottom: 1rem;
+        min-height: 1.2em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      "
+    >
+      —
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 0.5rem">
+      <button
+        class="btn btn-primary btn-sm"
+        onclick="startFed('{{ fed_id }}')"
+        style="flex: 1; font-size: 0.8rem; padding: 0.35rem 0"
+      >
+        Start
+      </button>
+      <button
+        class="btn btn-danger btn-sm"
+        onclick="stopFed('{{ fed_id }}')"
+        style="flex: 1; font-size: 0.8rem; padding: 0.35rem 0"
+      >
+        Stop
+      </button>
+      <a
+        href="/ui/federations/{{ fed_id }}/status"
+        style="
+          flex: 1;
+          text-align: center;
+          font-size: 0.8rem;
+          padding: 0.35rem 0;
+        "
+        class="btn btn-secondary btn-sm"
+      >
+        Status
+      </a>
+      <a
+        href="/ui/federations/{{ fed_id }}/logs"
+        style="
+          flex: 1;
+          text-align: center;
+          font-size: 0.8rem;
+          padding: 0.35rem 0;
+        "
+        class="btn btn-secondary btn-sm"
+      >
+        Logs
+      </a>
+    </div>
+  </div>
+  {% endfor %} {% if not federations %}
+  <div
+    style="
+      grid-column: 1/-1;
+      padding: 3rem;
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-size: 0.9rem;
+      border: 2px dashed var(--color-border-tertiary);
+      border-radius: 12px;
+    "
+  >
+    No federations found.<br />
+    Add YAML config files to <code>conf/federations/</code> and restart the
+    service.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  const stateColors = {
+    IDLE: { bg: "#e5e7eb", text: "#374151" },
+    CONNECTING: { bg: "#fef3c7", text: "#92400e" },
+    TRAINING: { bg: "#dbeafe", text: "#1e40af" },
+    FINISHED: { bg: "#d1fae5", text: "#065f46" },
+    ERROR: { bg: "#fee2e2", text: "#991b1b" },
+  };
+
+  function applyState(fedId, st) {
+    const cfg = stateColors[st.state] || stateColors.IDLE;
+
+    const badge = document.getElementById(`badge-${fedId}`);
+    if (badge) {
+      badge.textContent = st.state || "—";
+      badge.style.background = cfg.bg;
+      badge.style.color = cfg.text;
+    }
+
+    const stateEl = document.getElementById(`state-${fedId}`);
+    if (stateEl) {
+      const running = st.worker_running ? " · running" : "";
+      stateEl.textContent = (st.model ? `model: ${st.model}` : "") + running;
+    }
+
+    const roundEl = document.getElementById(`round-${fedId}`);
+    if (roundEl) roundEl.textContent = st.global_round ?? "—";
+
+    const accEl = document.getElementById(`acc-${fedId}`);
+    if (accEl) {
+      accEl.textContent =
+        st.train_accuracy != null
+          ? (st.train_accuracy * 100).toFixed(1) + "%"
+          : "—";
+    }
+
+    const ratioEl = document.getElementById(`ratio-${fedId}`);
+    if (ratioEl) {
+      ratioEl.textContent =
+        st.compression_ratio != null
+          ? st.compression_ratio.toFixed(2) + "x"
+          : "—";
+    }
+
+    const msgEl = document.getElementById(`msg-${fedId}`);
+    if (msgEl) msgEl.textContent = st.message || "—";
+  }
+
+  async function pollAll() {
+    try {
+      const res = await fetch("/federations");
+      const data = await res.json();
+
+      let runningCount = 0;
+      for (const [fedId, st] of Object.entries(data.status || {})) {
+        applyState(fedId, st);
+        if (st.worker_running) runningCount++;
+      }
+
+      document.getElementById("running-count").textContent = runningCount;
+      document.getElementById("last-refresh").textContent =
+        new Date().toLocaleTimeString();
+    } catch (e) {
+      console.error("Poll error:", e);
+    }
+  }
+
+  async function startFed(fedId) {
+    await fetch(`/federations/${fedId}/start`, { method: "POST" });
+    pollAll();
+  }
+
+  async function stopFed(fedId) {
+    await fetch(`/federations/${fedId}/stop`, { method: "POST" });
+    pollAll();
+  }
+
+  async function startAll() {
+    await fetch("/start-all", { method: "POST" });
+    pollAll();
+  }
+
+  async function stopAll() {
+    await fetch("/stop-all", { method: "POST" });
+    pollAll();
+  }
+
+  // Poll every 3s
+  pollAll();
+  setInterval(pollAll, 3000);
+</script>
+{% endblock %}

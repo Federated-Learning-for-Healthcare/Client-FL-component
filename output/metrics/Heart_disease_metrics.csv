@@ -1,0 +1,1 @@
+federation_id,global_round,client_round,timestamp,train_loss,train_accuracy,eval_loss,eval_accuracy,update_size_bytes,compression_ratio,privacy_type,noise_multiplier,clipping_norm,model_type,param_count,elapsed_seconds,ram_usage_mb,cpu_percent

@@ -1,5 +1,10 @@
-# will validate required fields
-# src/config/schema.py
+"""
+schema.py — Config validation for the FL client.
+
+Fix: changed val <= min_val to val < min_val so that 0.0 is accepted
+for momentum and noise_multiplier. Only negative values are rejected.
+"""
+
 from __future__ import annotations
 from typing import Any, Dict
 
@@ -8,50 +13,92 @@ class ConfigError(ValueError):
     pass
 
 
-def _require(cfg: Dict[str, Any], path: str) -> Any:
-    """Get nested key like 'model.type', raising if missing."""
-    cur: Any = cfg
-    for key in path.split("."):
-        if not isinstance(cur, dict) or key not in cur:
-            raise ConfigError(f"Missing required config key: '{path}'")
-        cur = cur[key]
-    return cur
+_REQUIRED_SECTIONS = [
+    "model", "data", "trainer", "privacy", "compression", "runtime"
+]
+
+# Only these sections require a "type" field
+_SECTIONS_WITH_TYPE = ["model", "data", "trainer", "privacy", "compression"]
+
+_VALID_TYPES = {
+    "model":       ["kan", "mlp"],
+    "data":        ["mnist", "ehr", "ecg"],
+    "trainer":     ["standard"],
+    "privacy":     ["none", "gaussian", "dpsgd"],
+    "compression": ["none", "topk", "quantize"],
+}
+
+# (section, param, min_val, max_val)
+# Constraint: val must be >= min_val (i.e. reject val < min_val only)
+_PARAM_CONSTRAINTS = [
+    ("privacy",     "noise_multiplier", 0.0,  None),
+    ("privacy",     "clipping_norm",    0.0,  None),
+    ("compression", "top_k_ratio",      0.0,  1.0),
+    ("trainer",     "lr",               0.0,  None),
+    ("trainer",     "momentum",         0.0,  1.0),
+]
 
 
 def validate_config(cfg: Dict[str, Any]) -> None:
-    # Required blocks
-    _require(cfg, "model.type")
-    _require(cfg, "data.type")
-    _require(cfg, "trainer.type")
-    _require(cfg, "privacy.type")
-    _require(cfg, "compression.type")
-    _require(cfg, "runtime.server_address")
-    _require(cfg, "runtime.device")
+    if not isinstance(cfg, dict):
+        raise ConfigError(f"Config must be a dict, got {type(cfg).__name__}")
 
-    # Optional param dicts should exist (we’ll default them if absent in builder)
-    # Validate privacy params when gaussian
-    privacy_type = _require(cfg, "privacy.type")
-    if privacy_type == "gaussian":
-        noise = _require(cfg, "privacy.params.noise_multiplier")
-        clip = _require(cfg, "privacy.params.clipping_norm")
-        if noise < 0:
-            raise ConfigError("privacy.params.noise_multiplier must be >= 0")
-        if clip <= 0:
-            raise ConfigError("privacy.params.clipping_norm must be > 0")
+    for section in _REQUIRED_SECTIONS:
+        if section not in cfg:
+            raise ConfigError(f"Missing required config section '{section}'")
+        if not isinstance(cfg[section], dict):
+            raise ConfigError(f"Config section '{section}' must be a dict")
 
-    # Trainer params sanity (if present)
-    trainer_params = cfg.get("trainer", {}).get("params", {})
-    if isinstance(trainer_params, dict) and "local_epochs" in trainer_params:
-        if int(trainer_params["local_epochs"]) < 1:
-            raise ConfigError("trainer.params.local_epochs must be >= 1")
+    # Only sections that actually use a type field get this check
+    for section in _SECTIONS_WITH_TYPE:
+        if "type" not in cfg[section]:
+            raise ConfigError(f"Missing 'type' in config section '{section}'")
 
-    # Data params sanity (if present)
-    data_params = cfg.get("data", {}).get("params", {})
-    if isinstance(data_params, dict) and "batch_size" in data_params:
-        if int(data_params["batch_size"]) < 1:
-            raise ConfigError("data.params.batch_size must be >= 1")
+    for section, valid_values in _VALID_TYPES.items():
+        type_val = cfg[section].get("type")
+        if type_val not in valid_values:
+            raise ConfigError(
+                f"Invalid type '{type_val}' for '{section}'. "
+                f"Must be one of: {valid_values}"
+            )
 
-    # Runtime device sanity
-    device = _require(cfg, "runtime.device")
-    if device not in ("cpu", "cuda"):
-        raise ConfigError("runtime.device must be 'cpu' or 'cuda'")
+    if "server_address" not in cfg.get("runtime", {}):
+        raise ConfigError("Missing 'server_address' in runtime config")
+
+    for section, param, min_val, max_val in _PARAM_CONSTRAINTS:
+        params = cfg.get(section, {}).get("params", {})
+        if not isinstance(params, dict) or param not in params:
+            continue
+        val = params[param]
+        if not isinstance(val, (int, float)):
+            raise ConfigError(
+                f"{section}.params.{param} must be numeric, "
+                f"got {type(val).__name__}"
+            )
+        # Use strict < so that 0.0 is accepted (only negatives are rejected)
+        if min_val is not None and val < min_val:
+            raise ConfigError(
+                f"{section}.params.{param}={val} must be >= {min_val}"
+            )
+        if max_val is not None and val > max_val:
+            raise ConfigError(
+                f"{section}.params.{param}={val} must be <= {max_val}"
+            )
+
+    if cfg["compression"]["type"] == "quantize":
+        bits = cfg["compression"].get("params", {}).get("bits", 16)
+        if bits not in (8, 16):
+            raise ConfigError(
+                f"compression.params.bits must be 8 or 16, got {bits}"
+            )
+
+    layers = cfg["model"].get("params", {}).get("layers_hidden")
+    if layers is not None:
+        if not isinstance(layers, list) or len(layers) < 2:
+            raise ConfigError(
+                "model.params.layers_hidden must be a list with >= 2 elements"
+            )
+        if not all(isinstance(d, int) and d > 0 for d in layers):
+            raise ConfigError(
+                "model.params.layers_hidden must contain positive integers"
+            )

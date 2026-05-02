@@ -1,17 +1,47 @@
-# 1. The Core Framework
-flwr>=1.13.0          # The Federated Learning engine
+# # # 1. The Core Framework
+# # flwr>=1.13.0          # The Federated Learning engine
 
-# 2. The Machine Learning Backend
-torch>=2.0.0          # PyTorch (The brain)
-torchvision>=0.15.0   # For loading test datasets (like MNIST)
-numpy<2.0.0           # STRICT: Flower often breaks with NumPy 2.0+
+# # # 2. The Machine Learning Backend
+# # torch>=2.0.0          # PyTorch (The brain)
+# # torchvision>=0.15.0   # For loading test datasets (like MNIST)
+# # numpy<2.0.0           # STRICT: Flower often breaks with NumPy 2.0+
 
-# 3. Configuration & Modularity
-hydra-core>=1.3.0     # Allows the "Plug & Play" YAML configs
-omegaconf>=2.3.0      # dependency for Hydra
+# # # 3. Configuration & Modularity
+# # hydra-core>=1.3.0     # Allows the "Plug & Play" YAML configs
+# # omegaconf>=2.3.0      # dependency for Hydra
 
-# 4. Utilities
-typing-extensions>=4.0.0 # Ensures type hints work smoothly
+# # # 4. Utilities
+# # typing-extensions>=4.0.0 # Ensures type hints work smoothly
 
 
+# # pyyaml
+# # fastapi
+# # ucimlrepo 
+# # scikit-learn 
+# # psutil
+
+# flwr>=1.13.0
+# torch>=2.0.0
+# torchvision>=0.15.0
+# numpy<2.0.0
+# pyyaml
+# fastapi
+# uvicorn[standard]
+# pandas
+# scikit-learn
+# ucimlrepo
+# psutil
+# pydantic>=2.0.0
+
+flwr>=1.13.0
+torch>=2.0.0
+torchvision>=0.15.0
+numpy<2.0.0
 pyyaml
+fastapi
+uvicorn[standard]
+pandas
+scikit-learn
+ucimlrepo
+psutil
+pydantic>=2.0.0

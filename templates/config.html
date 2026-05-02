@@ -1,0 +1,208 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Client Configuration</h1>
+    <p class="subtitle">
+      Set up the hospital client before federated training. Save changes before
+      starting training.
+    </p>
+  </div>
+  <div class="header-right">
+    <span id="stateBadge" class="pill">Loading…</span>
+  </div>
+</div>
+
+<div class="layout-2col">
+  <!-- LEFT COLUMN -->
+  <div class="stack">
+    <div class="card">
+      <div class="card-title">Node Identity</div>
+
+      <div class="identity-row">
+        <div class="identity-item">
+          <div class="label">Node Name</div>
+          <div class="value" id="nodeName">—</div>
+        </div>
+        <div class="identity-item">
+          <div class="label">Status</div>
+          <div class="value">
+            <span id="statusPill" class="pill small">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="identity-row">
+        <div class="identity-item wide">
+          <div class="label">Environment</div>
+          <div class="value">On-Premise</div>
+        </div>
+      </div>
+
+      <div class="identity-row">
+        <div class="identity-item wide">
+          <div class="label">Connected Server</div>
+          <div class="value mono" id="serverAddr">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Model Configuration</div>
+      <div class="tile-row">
+        <div class="tile" id="tileKAN">
+          <div class="tile-title">KAN</div>
+          <div class="tile-sub">Kolmogorov-Arnold Network</div>
+        </div>
+        <div class="tile" id="tileMLP">
+          <div class="tile-title">MLP</div>
+          <div class="tile-sub">Baseline Neural Network</div>
+        </div>
+      </div>
+
+      <div class="kv2">
+        <div class="k">Active Model</div>
+        <div class="v" id="modelType">—</div>
+        <div class="k">Trainer</div>
+        <div class="v" id="trainerType">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Privacy Settings</div>
+      <div class="tile-row">
+        <div class="tile" id="tileDP">
+          <div class="tile-title">DP Gaussian</div>
+          <div class="tile-sub">Clipping + Gaussian noise</div>
+        </div>
+        <div class="tile" id="tileNone">
+          <div class="tile-title">None</div>
+          <div class="tile-sub">No privacy mechanism</div>
+        </div>
+      </div>
+
+      <div class="kv2">
+        <div class="k">Active Privacy</div>
+        <div class="v" id="privacyType">—</div>
+        <div class="k">Compression</div>
+        <div class="v" id="compressionType">—</div>
+      </div>
+      <p class="hint">
+        Configuration will be locked while training is running.
+      </p>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="stack">
+    <div class="card">
+      <div class="card-title">Training & Runtime</div>
+      <div class="kv2">
+        <div class="k">Device</div>
+        <div class="v" id="device">—</div>
+        <div class="k">Polling</div>
+        <div class="v">Every 5 seconds</div>
+      </div>
+
+      <div class="actions">
+        <button id="saveBtn" class="btn secondary" disabled>
+          Save Configuration
+        </button>
+        <button id="startBtn" class="btn">Start Training</button>
+      </div>
+
+      <p class="hint">
+        <b>Note:</b> “Save Configuration” can be enabled once you add
+        <code>POST /config</code>. For now, Start Training uses the current
+        config file.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Current Configuration (Read-only)</div>
+      <pre id="configDump" class="codebox"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function fetchJSON(url) {
+    const r = await fetch(url);
+    return await r.json();
+  }
+
+  function setPill(el, state) {
+    const s = (state || "UNKNOWN").toUpperCase();
+    el.textContent = s;
+    el.classList.remove("ok", "warn", "bad");
+    if (s === "IDLE" || s === "FINISHED") el.classList.add("ok");
+    else if (s === "TRAINING" || s === "CONNECTING") el.classList.add("warn");
+    else if (s === "ERROR") el.classList.add("bad");
+    else el.classList.add("warn");
+  }
+
+  function setTiles(cfg) {
+    const model = ((cfg.model && cfg.model.type) || "").toLowerCase();
+    document
+      .getElementById("tileKAN")
+      .classList.toggle("active", model === "kan");
+    document
+      .getElementById("tileMLP")
+      .classList.toggle("active", model === "mlp");
+
+    const priv = ((cfg.privacy && cfg.privacy.type) || "").toLowerCase();
+    document
+      .getElementById("tileDP")
+      .classList.toggle("active", priv === "gaussian");
+    document
+      .getElementById("tileNone")
+      .classList.toggle("active", priv === "none");
+  }
+
+  async function refresh() {
+    const cfg = await fetchJSON("/config");
+    const st = await fetchJSON("/status");
+
+    document.getElementById("nodeName").textContent =
+      (cfg.runtime && cfg.runtime.client_name) || "unknown";
+    document.getElementById("serverAddr").textContent =
+      (cfg.runtime && cfg.runtime.server_address) || "—";
+    document.getElementById("device").textContent =
+      (cfg.runtime && cfg.runtime.device) || "—";
+
+    document.getElementById("modelType").textContent =
+      (cfg.model && cfg.model.type) || "—";
+    document.getElementById("privacyType").textContent =
+      (cfg.privacy && cfg.privacy.type) || "—";
+    document.getElementById("compressionType").textContent =
+      (cfg.compression && cfg.compression.type) || "—";
+    document.getElementById("trainerType").textContent =
+      (cfg.trainer && cfg.trainer.type) || "—";
+
+    document.getElementById("configDump").textContent = JSON.stringify(
+      cfg,
+      null,
+      2,
+    );
+
+    setTiles(cfg);
+
+    setPill(document.getElementById("stateBadge"), st.state);
+    setPill(document.getElementById("statusPill"), st.state);
+
+    const startBtn = document.getElementById("startBtn");
+    startBtn.disabled = !!st.worker_running;
+  }
+
+  document.getElementById("startBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("startBtn");
+    btn.disabled = true;
+    await fetch("/start-training", { method: "POST" });
+    await refresh();
+  });
+
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+
+{% endblock %}

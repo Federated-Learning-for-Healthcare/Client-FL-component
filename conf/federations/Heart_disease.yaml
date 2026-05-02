@@ -1,0 +1,49 @@
+# Federation: Heart Disease
+# Dataset:    Cleveland Heart Disease (UCI)
+# Model:      KAN  [13 → 32 → 16 → 2]
+# Privacy:    DP-SGD  ε budget independent from other federations
+# Server:     FL server A
+
+model:
+  type: kan
+  params:
+    layers_hidden: [13, 32, 16, 2]
+    grid_min: -2.0
+    grid_max: 2.0
+    num_grids: 8
+    use_base_update: true
+
+data:
+  type: ehr
+  params:
+    data_source: ucimlrepo # auto-downloads Cleveland dataset
+    batch_size: 32
+    test_split: 0.2
+    num_clients: 1 # set > 1 to simulate FL partitioning
+    client_id: 0
+    random_seed: 42
+    refresh_each_round: false
+
+trainer:
+  type: standard
+  params:
+    optimizer: adam
+    lr: 0.001
+    momentum: 0.9
+
+privacy:
+  type: dpsgd # options: none | gaussian | dpsgd
+  params:
+    noise_multiplier: 1.0
+    clipping_norm: 1.0
+
+compression:
+  type: topk # options: none | topk | quantize
+  params:
+    top_k_ratio: 0.1
+
+runtime:
+  device: cpu
+  server_address: "127.0.0.1:8080"
+  client_name: "hospital_01_heart_disease"
+  log_level: "info"

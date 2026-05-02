@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Federated Learning Client" }}</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="topnav">
+      <div class="topnav-inner">
+        <div class="brand">
+          <div class="brand-badge">F</div>
+          <div class="brand-title">Federated Learning Client</div>
+        </div>
+
+        <div class="tabs">
+          <a
+            href="/ui/config"
+            class="tab {{ 'active' if active=='config' else '' }}"
+            >Configuration</a
+          >
+          <a
+            href="/ui/status"
+            class="tab {{ 'active' if active=='status' else '' }}"
+            >Training Status</a
+          >
+          <a
+            href="/ui/logs"
+            class="tab {{ 'active' if active=='logs' else '' }}"
+            >Logs</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <main class="page">
+      <div class="container">{% block content %}{% endblock %}</div>
+    </main>
+  </body>
+</html>
