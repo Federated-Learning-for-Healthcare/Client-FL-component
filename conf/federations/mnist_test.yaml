@@ -1,30 +1,39 @@
-compression:
+model:
+  type: kan
   params:
-    bits: 16
-    top_k_ratio: 0.1
-  type: none
+    layers_hidden: [784, 128, 64, 10]
+    grid_min: -1.0
+    grid_max: 1.0
+    num_grids: 8
+    use_base_update: true
+
 data:
   type: mnist
-model:
   params:
-    layers_hidden:
-    - 784
-    - 24
-    - 24
-    - 10
-  type: kan
-privacy:
-  params:
-    clipping_norm: 1
-    noise_multiplier: 1
-  type: none
-runtime:
-  device: cpu
-  log_level: info
-  server_address: 127.0.0.1:8080
+    batch_size: 32
+    shuffle: true
+    data_root: ./data
+
 trainer:
+  type: standard
   params:
+    optimizer: adam
     lr: 0.001
     momentum: 0.9
-    optimizer: adam
-  type: standard
+
+# DP-SGD: per-sample gradient clipping + Gaussian noise injected during backprop.
+# noise_multiplier: higher = more privacy, lower accuracy. Start at 1.0, try 0.5 / 1.5.
+# clipping_norm: max L2 norm per gradient. 1.0 is the standard starting point.
+privacy:
+  type: dpsgd
+  params:
+    noise_multiplier: 1.0
+    clipping_norm: 1.0
+
+compression:
+  type: none
+
+runtime:
+  device: cpu
+  server_address: 127.0.0.1:8080
+  client_name: mnist_dp_test

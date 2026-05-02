@@ -15,7 +15,7 @@ from src.dataLoaders.ecg_loader import ECGLoader
 from src.models.kan import KAN
 from src.models.mlp import SimpleMLP
 from src.modules.compression import NoCompression, QuantizationCompression, TopKCompression
-from src.modules.privacy import DPSGDPrivacy, GaussianPrivacy, NoPrivacy
+from src.modules.privacy import DPSGDPrivacy, GaussianPrivacy, NoPrivacy, TrueDPSGDPrivacy
 from src.modules.training import StandardPyTorchTrainer
 
 
@@ -37,9 +37,10 @@ DEFAULT_REGISTRY = Registry(
         "standard": StandardPyTorchTrainer,
     },
     privacy={
-        "none":     NoPrivacy,
-        "gaussian": GaussianPrivacy,
-        "dpsgd":    DPSGDPrivacy,
+        "none":        NoPrivacy,
+        "gaussian":    GaussianPrivacy,
+        "dpsgd":       DPSGDPrivacy,
+        "true_dpsgd":  TrueDPSGDPrivacy,
     },
     compression={
         "none":     NoCompression,

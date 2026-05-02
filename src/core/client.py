@@ -123,6 +123,22 @@ class ModularFlowerClient(fl.client.NumPyClient):
         train_loss = float(train_metrics.get("train_loss", 0.0))
         train_acc  = float(train_metrics.get("accuracy",   0.0))
 
+        # Compute privacy budget spent so far (only for DP-SGD variants)
+        privacy_epsilon: Optional[float] = None
+        if hasattr(self.privacy, "epsilon_spent"):
+            try:
+                dataset_size  = len(self.train_loader.dataset)
+                batch_size    = self.train_loader.batch_size or 1
+                sampling_rate = batch_size / dataset_size
+                total_steps   = self.client_round * epochs * len(self.train_loader)
+                privacy_epsilon = self.privacy.epsilon_spent(total_steps, sampling_rate)
+                logger.info(
+                    "fit() — ε=%.4f  δ=%.2e  steps=%d",
+                    privacy_epsilon, self.privacy.delta, total_steps,
+                )
+            except Exception as e:
+                logger.warning("Could not compute epsilon: %s", e)
+
         logger.info(
             "fit() — loss=%.4f  acc=%.4f  ratio=%.2fx  bytes=%d",
             train_loss, train_acc, ratio, update_bytes,
@@ -150,6 +166,7 @@ class ModularFlowerClient(fl.client.NumPyClient):
                 eval_accuracy     = self._last_eval_acc,
                 update_size_bytes = update_bytes,
                 compression_ratio = float(ratio),
+                privacy_epsilon   = privacy_epsilon,
             )
 
         # 7) Update status store
@@ -162,6 +179,7 @@ class ModularFlowerClient(fl.client.NumPyClient):
                 train_accuracy    = train_acc,
                 compression_ratio = float(ratio),
                 update_size_bytes = update_bytes,
+                privacy_epsilon   = privacy_epsilon,
                 message           = f"Round {global_round} complete",
             )
 

@@ -36,11 +36,18 @@ trainer:
     lr: 0.001
     momentum: 0.9
 
+# privacy:
+#   type: dpsgd # independent ε from heart_disease federation
+#   params:
+#     noise_multiplier: 0.8
+#     clipping_norm: 1.2
+
 privacy:
-  type: dpsgd # independent ε from heart_disease federation
+  type: true_dpsgd # or true_dpsgd
   params:
     noise_multiplier: 0.8
     clipping_norm: 1.2
+    delta: 1.0e-5 # new — controls the δ in (ε, δ)-DP
 
 compression:
   type: quantize # different compression from heart_disease

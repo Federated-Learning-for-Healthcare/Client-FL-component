@@ -31,6 +31,61 @@ class StandardPyTorchTrainer(AbstractTrainer):
         self.lr       = lr
         self.momentum = momentum
 
+    def _true_dpsgd_step(
+        self,
+        model:     nn.Module,
+        inputs:    torch.Tensor,
+        labels:    torch.Tensor,
+        criterion: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        C:         float,
+        sigma:     float,
+    ) -> Tuple[float, torch.Tensor]:
+        """
+        One true DP-SGD batch step.
+
+        For each sample: compute gradient, clip by global L2 norm C.
+        Sum clipped gradients, add Gaussian noise, divide by batch size,
+        apply via optimizer.
+
+        Returns (batch_loss, outputs) where outputs is a no_grad forward
+        pass used for accuracy tracking.
+        """
+        trainable   = [p for p in model.parameters() if p.requires_grad]
+        accumulated = [torch.zeros_like(p) for p in trainable]
+
+        for i in range(inputs.shape[0]):
+            optimizer.zero_grad()
+            loss_i = criterion(model(inputs[i:i+1]), labels[i:i+1])
+            loss_i.backward()
+
+            # Per-sample global gradient norm across all parameters
+            sample_norm = torch.sqrt(sum(
+                p.grad.norm(2) ** 2
+                for p in trainable if p.grad is not None
+            ))
+            clip = torch.clamp(
+                torch.tensor(C, dtype=sample_norm.dtype, device=sample_norm.device)
+                / (sample_norm + 1e-6),
+                max=1.0,
+            )
+            for j, p in enumerate(trainable):
+                if p.grad is not None:
+                    accumulated[j] += p.grad.detach() * clip
+
+        # Inject noise into the sum, normalise by batch size, apply
+        optimizer.zero_grad()
+        batch_size = inputs.shape[0]
+        for j, p in enumerate(trainable):
+            noise  = torch.randn_like(accumulated[j]) * (sigma * C)
+            p.grad = (accumulated[j] + noise) / batch_size
+        optimizer.step()
+
+        with torch.no_grad():
+            outputs    = model(inputs)
+            batch_loss = criterion(outputs, labels).item()
+        return batch_loss, outputs
+
     def _build_optimizer(self, model: nn.Module) -> torch.optim.Optimizer:
         if self.optimizer_name == "sgd":
             return torch.optim.SGD(model.parameters(), lr=self.lr, momentum=self.momentum)
@@ -66,13 +121,23 @@ class StandardPyTorchTrainer(AbstractTrainer):
 
                 for inputs, labels in train_loader:
                     inputs, labels = inputs.to(device), labels.to(device)
-                    optimizer.zero_grad()
-                    outputs = model(inputs)
-                    loss    = criterion(outputs, labels)
-                    loss.backward()
-                    optimizer.step()
 
-                    epoch_loss    += loss.item()
+                    if getattr(privacy, "requires_per_sample_training", False):
+                        # True DP-SGD: per-sample clip → sum → noise → step
+                        batch_loss, outputs = self._true_dpsgd_step(
+                            model, inputs, labels, criterion, optimizer,
+                            privacy.clipping_norm, privacy.noise_multiplier,
+                        )
+                    else:
+                        # Standard path (hooks already attached for approx DPSGD)
+                        optimizer.zero_grad()
+                        outputs    = model(inputs)
+                        loss       = criterion(outputs, labels)
+                        loss.backward()
+                        optimizer.step()
+                        batch_loss = loss.item()
+
+                    epoch_loss    += batch_loss
                     _, predicted   = torch.max(outputs.data, 1)
                     epoch_total   += labels.size(0)
                     epoch_correct += (predicted == labels).sum().item()

@@ -19,7 +19,7 @@ class StatusStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
 
-        if not self.path.exists():
+        if not self._has_valid_json():
             self.write({
                 "state": "IDLE",
                 "global_round": None,
@@ -48,9 +48,34 @@ class StatusStore:
     def _now(self) -> str:
         return datetime.utcnow().isoformat()
 
+    def _has_valid_json(self) -> bool:
+        if not self.path.exists():
+            return False
+        try:
+            text = self.path.read_text(encoding="utf-8").strip()
+            if not text:
+                return False
+            json.loads(text)
+            return True
+        except (json.JSONDecodeError, OSError):
+            return False
+
+    def _default_state(self) -> Dict[str, Any]:
+        return {
+            "state": "IDLE", "global_round": None, "client_round": 0,
+            "model": None, "privacy": None, "compression": None,
+            "message": "Service started", "last_update": self._now(),
+            "train_loss": None, "train_accuracy": None,
+            "eval_loss": None, "eval_accuracy": None,
+            "train_history": [], "eval_history": [],
+        }
+
     def read(self) -> Dict[str, Any]:
         with self._lock:
-            return json.loads(self.path.read_text(encoding="utf-8"))
+            try:
+                return json.loads(self.path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return self._default_state()
 
     def write(self, data: Dict[str, Any]) -> None:
         data["last_update"] = self._now()
@@ -67,7 +92,10 @@ class StatusStore:
         This prevents eval values from being copied into every train row.
         """
         with self._lock:
-            current = json.loads(self.path.read_text(encoding="utf-8"))
+            try:
+                current = json.loads(self.path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                current = self._default_state()
 
             # Detect what kind of update this is BEFORE we overwrite fields
             train_update = ("train_loss" in fields) or ("train_accuracy" in fields)

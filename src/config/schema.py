@@ -24,7 +24,7 @@ _VALID_TYPES = {
     "model":       ["kan", "mlp"],
     "data":        ["mnist", "ehr", "ecg"],
     "trainer":     ["standard"],
-    "privacy":     ["none", "gaussian", "dpsgd"],
+    "privacy":     ["none", "gaussian", "dpsgd", "true_dpsgd"],
     "compression": ["none", "topk", "quantize"],
 }
 

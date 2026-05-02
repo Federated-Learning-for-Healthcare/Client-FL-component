@@ -49,6 +49,7 @@ _COLUMNS = [
     "privacy_type",
     "noise_multiplier",
     "clipping_norm",
+    "privacy_epsilon",
     "model_type",
     "param_count",
     "elapsed_seconds",
@@ -73,6 +74,7 @@ class RoundMetrics:
     privacy_type:      Optional[str]   = None
     noise_multiplier:  Optional[float] = None
     clipping_norm:     Optional[float] = None
+    privacy_epsilon:   Optional[float] = None
     model_type:        Optional[str]   = None
     param_count:       Optional[int]   = None
     elapsed_seconds:   Optional[float] = None
@@ -150,6 +152,7 @@ class MetricsStore:
         eval_accuracy:     Optional[float] = None,
         update_size_bytes: Optional[int]   = None,
         compression_ratio: Optional[float] = None,
+        privacy_epsilon:   Optional[float] = None,
     ) -> None:
         """
         Record metrics for one completed round. Appends one row to CSV.
@@ -176,6 +179,7 @@ class MetricsStore:
             privacy_type      = self.privacy_type,
             noise_multiplier  = self.noise_multiplier,
             clipping_norm     = self.clipping_norm,
+            privacy_epsilon   = _r(privacy_epsilon, decimals=4),
             model_type        = self.model_type,
             param_count       = self.param_count,
             elapsed_seconds   = elapsed,
