@@ -160,7 +160,7 @@ trainer:
     momentum: 0.9
 
 privacy:
-  type: none # options: none | gaussian | dpsgd
+  type: dpsgd # options: none | gaussian | dpsgd
   params:
     noise_multiplier: 1.0
     clipping_norm: 1.0
@@ -172,7 +172,7 @@ compression:
     bits: 16
 
 runtime:
-  device: cpu
+  device: cuda # options: cpu | cuda
   server_address: "127.0.0.1:8080"
   client_name: "hospital_client_01"
   log_level: "info"

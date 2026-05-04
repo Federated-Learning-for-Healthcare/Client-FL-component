@@ -12,11 +12,14 @@ from src.core.interfaces import (
 from src.dataLoaders.mnist_loader import MNISTDataLoader
 from src.dataLoaders.ehr_loader import EHRLoader
 from src.dataLoaders.ecg_loader import ECGLoader
+from src.dataLoaders.multimodal_loader import MultiModalDataLoader
 from src.models.kan import KAN
 from src.models.mlp import SimpleMLP
+from src.models.multimodal import MultiModalModel
 from src.modules.compression import NoCompression, QuantizationCompression, TopKCompression
 from src.modules.privacy import DPSGDPrivacy, GaussianPrivacy, NoPrivacy, TrueDPSGDPrivacy
 from src.modules.training import StandardPyTorchTrainer
+from src.modules.multimodal_trainer import MultiModalTrainer
 
 
 @dataclass(frozen=True)
@@ -30,11 +33,13 @@ class Registry:
 
 DEFAULT_REGISTRY = Registry(
     models={
-        "kan": KAN,
-        "mlp": SimpleMLP,
+        "kan":        KAN,
+        "mlp":        SimpleMLP,
+        "multimodal": MultiModalModel,
     },
     trainers={
-        "standard": StandardPyTorchTrainer,
+        "standard":   StandardPyTorchTrainer,
+        "multimodal": MultiModalTrainer,
     },
     privacy={
         "none":        NoPrivacy,
@@ -48,8 +53,9 @@ DEFAULT_REGISTRY = Registry(
         "quantize": QuantizationCompression,
     },
     data={
-        "mnist": MNISTDataLoader,
-        "ehr":   EHRLoader,
-        "ecg":   ECGLoader,
+        "mnist":      MNISTDataLoader,
+        "ehr":        EHRLoader,
+        "ecg":        ECGLoader,
+        "multimodal": MultiModalDataLoader,
     },
 )

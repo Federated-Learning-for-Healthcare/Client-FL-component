@@ -21,9 +21,9 @@ _REQUIRED_SECTIONS = [
 _SECTIONS_WITH_TYPE = ["model", "data", "trainer", "privacy", "compression"]
 
 _VALID_TYPES = {
-    "model":       ["kan", "mlp"],
-    "data":        ["mnist", "ehr", "ecg"],
-    "trainer":     ["standard"],
+    "model":       ["kan", "mlp", "multimodal"],
+    "data":        ["mnist", "ehr", "ecg", "multimodal"],
+    "trainer":     ["standard", "multimodal"],
     "privacy":     ["none", "gaussian", "dpsgd", "true_dpsgd"],
     "compression": ["none", "topk", "quantize"],
 }

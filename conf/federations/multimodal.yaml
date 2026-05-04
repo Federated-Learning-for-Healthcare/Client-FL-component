@@ -1,0 +1,90 @@
+# Federation: Multimodal (ECG only — expand to ECG+EHR or ECG+MRI+EHR below)
+# Model:      MultiModalModel  — ECGEncoder (flat KAN) + attention fusion head
+# Privacy:    None (add dpsgd or gaussian for production)
+# Server:     FL server
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+model:
+  type: multimodal
+  params:
+    n_classes: 5            # 5-class arrhythmia (MIT-BIH). Change to 2 for binary EHR task.
+    embed_dim: 128
+    modal_mask: [1, 0, 0]  # [ecg, mri, ehr] — 1 = owned, 0 = absent
+    fusion_head_type: kan  # kan | mlp  (KAN = non-linear explicit; MLP = faster/simpler)
+
+    # ECG encoder config (omit this block entirely to disable ECG)
+    ecg:
+      mode: flat          # flat = MIT-BIH CSV 187-feature input
+      n_features: 187
+      embed_dim: 128
+
+    # MRI encoder config — uncomment when MRI data is available
+    # mri:
+    #   in_channels: 1
+    #   img_size: 64
+    #   embed_dim: 128
+
+    # EHR encoder config — uncomment and set modal_mask: [1, 0, 1] to enable
+    # ehr:
+    #   n_features: 13
+    #   embed_dim: 128
+
+# ── Data ──────────────────────────────────────────────────────────────────────
+data:
+  type: multimodal
+  params:
+    batch_size: 32
+    test_split: 0.2
+    num_clients: 1    # increase for FL simulation (partition training data)
+    client_id: 0
+    random_seed: 42
+    modalities:
+      ecg:
+        enabled: true
+        mode: csv_flat
+        data_dir: ./data/mitbih    # place mitbih_train.csv + mitbih_test.csv here
+        n_features: 187
+        balance_classes: true
+        max_samples_per_class: 5000
+      mri:
+        enabled: false
+        # image_dir: ./data/mri    # sub-folders named by integer class labels
+        # img_size: 64
+        # in_channels: 1
+      ehr:
+        enabled: false
+        # mode: ucimlrepo          # ucimlrepo | csv
+        # ucimlrepo_id: 45
+        # n_features: 13
+        # csv_path: ./data/heart.csv
+
+# ── Trainer ───────────────────────────────────────────────────────────────────
+trainer:
+  type: multimodal
+  params:
+    optimizer: sgd
+    lr: 0.01
+    momentum: 0.9
+    modal_drop_p: 0.0   # set to 0.3 when client has >1 modality enabled
+
+# ── Privacy ───────────────────────────────────────────────────────────────────
+privacy:
+  type: none
+  # type: dpsgd
+  # params:
+  #   noise_multiplier: 1.0
+  #   clipping_norm: 1.0
+
+# ── Compression ───────────────────────────────────────────────────────────────
+compression:
+  type: none
+  # type: topk
+  # params:
+  #   top_k_ratio: 0.1
+
+# ── Runtime ───────────────────────────────────────────────────────────────────
+runtime:
+  device: cpu
+  server_address: "127.0.0.1:8080"
+  client_name: "hospital_01_multimodal"
+  log_level: "info"
