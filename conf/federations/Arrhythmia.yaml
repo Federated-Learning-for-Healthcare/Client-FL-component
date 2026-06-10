@@ -20,7 +20,7 @@ model:
 data:
   type: ecg
   params:
-    data_dir: ./data/mitbih
+    data_dir: ./data/MRI
     batch_size: 64
     balance_classes: true
     max_samples_per_class: 5000
